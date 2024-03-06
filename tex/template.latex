@@ -33,7 +33,9 @@ twoside
 \renewcommand{\headrulewidth}{0pt}
 \fancyhf{}
 \fancyheadoffset{0cm}
-\fancyhead[RE,LO]{\raisebox{-0.5\height}{\includegraphics[width=2.5cm]{tex/logo.png}}}
+$if(logo)$
+\fancyhead[RE,LO]{\raisebox{-0.5\height}{\includegraphics[width=2.5cm]{$logo$}}}
+$endif$
 $if(header)$
 \fancyhead[C]{$header$}
 $endif$

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+scriptpath=$(dirname $(realpath $0))
 scriptname=$0
 function usage {
     echo "Usage: $scriptname [OPTIONS] [FILES]"
@@ -31,7 +32,7 @@ fi
 tmpdir=$(mktemp -d)
 chmod 700 $tmpdir
 
-sigdir="./sigs"
+sigdir="$scriptpath/sigs"
 show=false
 
 ## for sharelatex download
@@ -170,8 +171,9 @@ echo Compiling to $pdf
 
 pandoc $tmpfile \
     -f markdown \
-    --template=./tex/template.latex \
-    --include-in-header=./tex/style.latex \
+    --template=$scriptpath/tex/template.latex \
+    --include-in-header=$scriptpath/tex/style.latex \
+    -V logo:$scriptpath/tex/logo.png \
     -V header:"$(echo $name | sed -E 's/[_\.]/\ /g' | sed -E 's/-/\./g')" \
     -V mainfont="Ubuntu" \
     -V colorlinks:true \
