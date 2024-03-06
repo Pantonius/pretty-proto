@@ -9,6 +9,7 @@ function usage {
     echo "Options:"
     echo "  -h, --help                Show this help message and exit"
     echo "  -d, --download            Download the protocol from sharelatex"
+    echo "  -k, --keep                Keep the downloaded markdown protocol"
     echo "  -e, --email               The email to use for downloading the protocol"
     echo "  -p, --password            The password to use for downloading the protocol"
     echo "  -D, --domain              The domain of the sharelatex server"
@@ -31,9 +32,11 @@ tmpdir=$(mktemp -d)
 chmod 700 $tmpdir
 
 sigdir="./sigs"
+show=false
 
 ## for sharelatex download
 download=false
+keep=false
 domain="https://sharelatex.physik.uni-konstanz.de"
 email="fachschaft.informatik@uni-konstanz.de"
 password=""
@@ -47,6 +50,7 @@ while [ "$#" -gt 0 ]; do
     case $1 in
         -h|--help) usage; exit 0 ;;
         -d|--download) download=true;;
+        -k|--keep) keep=true;;
         -e|--email) email=$2; shift ;;
         -p|--password) password=$2; shift ;;
         -D|--domain) domain=$2; shift ;;
@@ -123,6 +127,12 @@ fi
 name=$(grep -E ".?Az\." $tmpfile | sed -E 's/.*Az\.\s*(.*Protokoll).*/\1/')
 if [ -z "$name" ]; then
     name=${inputfile%.*}
+fi
+
+# If the download and keep flags are set, keep the markdown file
+if [ "$download" = true ] && [ "$keep" = true ]; then
+    echo "Keeping the markdown file..."
+    cp $tmpfile $name.md
 fi
 
 # Set the output file names

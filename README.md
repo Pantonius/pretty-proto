@@ -20,6 +20,10 @@ Wie auch bei der vorherigen Version des Protokoll Skripts, lässt sich das Proto
 `-d, --download` signalisiert dem Skript, dass er das Protokoll von Sharelatex herunterladen soll.  
 `-p, --password` setzt das Passwort, das zu verwenden ist.  
 
+Falls die heruntergeladene Markdown Datei abgespeichert werden soll, kann zusätzlich folgende Flag gesetzt werden:
+
+`-k, --keep` signalisert dem Skript, dass es die heruntergeladene Markdown-Datei speichern soll  
+
 Ansonsten lassen sich die Standardwerte des Skripts benutzen. Falls man trotzdem alles definieren möchte gibt es noch folgende Flags:
 
 `-D, --domain` setzt die Domain des Sharelatex Servers (*default*: `https://sharelatex.physik.uni-konstanz.de`)  
