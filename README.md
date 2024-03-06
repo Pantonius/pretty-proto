@@ -21,6 +21,7 @@ Wie auch bei der vorherigen Version des Protokoll Skripts, lässt sich das Proto
 `-p, --password` setzt das Passwort, das zu verwenden ist.  
 
 Ansonsten lassen sich die Standardwerte des Skripts benutzen. Falls man trotzdem alles definieren möchte gibt es noch folgende Flags:
+
 `-D, --domain` setzt die Domain des Sharelatex Servers (*default*: `https://sharelatex.physik.uni-konstanz.de`)  
 `-P, --project` setzt die ProjectID des Sharelatex Projektes in dem sich das Protokoll befindet  
 `-f, --filename` setzt den Namen der Protokolldatei im Sharelatex Projekt (*default*: `protokoll.tex`)  
