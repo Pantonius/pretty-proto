@@ -4,10 +4,16 @@ scriptname=$0
 function usage {
     echo "Usage: $scriptname [OPTIONS] [FILES]"
     echo "Compile a protocol from a markdown file"
-    ehco "If no input file is set, the script will take input from stdin"
+    echo "If no input file is set, the script will take input from stdin"
     echo
     echo "Options:"
     echo "  -h, --help                Show this help message and exit"
+    echo "  -d, --download            Download the protocol from sharelatex"
+    echo "  -e, --email               The email to use for downloading the protocol"
+    echo "  -p, --password            The password to use for downloading the protocol"
+    echo "  -D, --domain              The domain of the sharelatex server"
+    echo "  -P, --project             The project id of the protocol on sharelatex"
+    echo "  -f, --filename            The filename of the protocol on sharelatex"
     echo "  -c, --chair-signature     Add the chair signature to the protocol"
     echo "  -p, --protocol-signature  Add the protocolant signature to the protocol"
     echo "  -s, --show                Show the compiled pdf"
@@ -20,15 +26,35 @@ if [ -f $1 ]; then
 fi
 
 
+# Set default values
+tmpdir=$(mktemp -d)
+chmod 700 $tmpdir
+
 sigdir="./sigs"
+
+## for sharelatex download
+download=false
+domain="https://sharelatex.physik.uni-konstanz.de"
+email="fachschaft.informatik@uni-konstanz.de"
+password=""
+project="5a058e9d1731df007b5aa1fd"
+filename="protokoll.tex"
+zip="$tmpdir/protocol.zip"
+cookie="$tmpdir/cookies.txt"
 
 # Go through all remaining arguments
 while [ "$#" -gt 0 ]; do
     case $1 in
         -h|--help) usage; exit 0 ;;
+        -d|--download) download=true;;
+        -e|--email) email=$2; shift ;;
+        -p|--password) password=$2; shift ;;
+        -D|--domain) domain=$2; shift ;;
+        -P|--project) project=$2; shift ;;
+        -f|--filename) filename=$2; shift ;;
         -c|--chair-signature) chairsig="$sigdir/$2.png"; shift ;;
         -p|--protocol-signature) protsig="$sigdir/$2.png"; shift ;;
-        -s|--show) show=true; shift ;;
+        -s|--show) show=true;;
         -*) echo "Unknown parameter passed: $1"; exit 1 ;;
         *)
             # if inputfile is not set yet and the argument is a file, set inputfile to the argument
@@ -44,19 +70,51 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
+# If the download flag is set, download the protocol
+if [ "$download" = true ]; then
+    # Fetching csrf token from login page and saving it to csrf variable
+    echo "Fetching login page..."
+    curl -s -c $cookie "$domain/login" |
+        sed -rn 's/^.*<input name="_csrf" type="hidden" value="([^"]+)".*$/\1/p' > $tmpdir/csrf.txt
+    csrf=$(cat $tmpdir/csrf.txt)
+
+    # Logging into sharelatex
+    echo "Logging into sharelatex..."
+    curl "$domain/login" -s -b $cookie -c $cookie -H "Referer: $domain/login" \
+        -d "_csrf=$csrf" -d "email=$email" -d "password=$password"
+
+    # Download the project zip
+    echo -e "\nDownloading protocol..."
+    curl -s -b $cookie -c $cookie -o $zip $domain/project/$project/download/zip
+
+    # Unzip the project
+    echo -e "\nUnzipping protocol..."
+    unzip -q "$zip" "$filename" -d "$tmpdir"
+
+    inputfile=$tmpdir/$filename
+fi
+
 # If no input file is set and stdin is empty
 if [ -z "$inputfile" ] && [ -t 0 ]; then
     echo "No input set"
     exit 1
 fi
 
-# tmpfile is a working copy of the input file
-tmpfile=$(mktemp)
+# Create a working copy of the input file
+tmpfile="$tmpdir/$inputfile"
 if [ -n "$inputfile" ]; then
-    cp $inputfile $tmpfile
+    # if inputfile is already within the tmpdir, leave it
+    if [ "${inputfile:0:${#tmpdir}}" = "$tmpdir" ]; then
+        tmpfile=$inputfile
+    else
+        # if inputfile is not within the tmpdir, copy it
+        echo "Creating working copy of $inputfile..."
+        cp $inputfile $tmpfile
+    fi
 else
     # take from stdin
     echo "Taking input from stdin..."
+    tmpfile="$tmpdir/stdin"
     cat > $tmpfile
     inputfile="stdin"
 fi
@@ -121,4 +179,4 @@ if [ -n "$show" ]; then
 fi
 
 # cleanup
-rm $tmpfile
+rm -r $tmpdir
