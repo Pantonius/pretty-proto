@@ -16,8 +16,8 @@ function usage {
     echo "  -D, --domain              The domain of the sharelatex server"
     echo "  -P, --project             The project id of the protocol on sharelatex"
     echo "  -f, --filename            The filename of the protocol on sharelatex"
-    echo "  -c, --chair-signature     Add the chair signature to the protocol"
-    echo "  -p, --protocol-signature  Add the protocolant signature to the protocol"
+    echo "  -c, --chair               Add the signature of the chair to the protocol"
+    echo "  -t, --transcript          Add the signature of the transcript writer to the protocol"
     echo "  -s, --show                Show the compiled pdf"
 
     echo "Configuration:"
@@ -36,16 +36,20 @@ if [ -f $1 ]; then
 fi
 
 
-# Set default values
+# Create tmpdir
 tmpdir=$(mktemp -d)
 chmod 700 $tmpdir
 
-sigdir="$scriptpath/sigs"
-font="Ubuntu"
-logo="$scriptpath/tex/logo.png"
-tocTitle="Tagesordnung"
-tocSubtitle=""
-show=false
+# Set default values
+sigdir="$scriptpath/sigs"               # The directory containing the signatures
+sigline="$scriptpath/tex/sigline.latex" # The signature line to add to the protocol
+font="Ubuntu"                           # The font to use for the protocol
+logo="$scriptpath/tex/logo.png"         # The logo to use for the protocol
+tocTitle="Tagesordnung"                 # The title of the table of contents
+tocSubtitle=""                          # The subtitle of the table of contents
+show=false                              # Show the compiled pdf
+intro=""                                # The introduction to the protocol
+outro=""                                # The outro to the protocol
 
 ## for sharelatex download
 download=false
@@ -75,8 +79,8 @@ while [ "$#" -gt 0 ]; do
         -D|--domain) domain=$2; shift ;;
         -P|--project) project=$2; shift ;;
         -f|--filename) filename=$2; shift ;;
-        -c|--chair-signature) chairsig="$sigdir/$2.png"; shift ;;
-        -p|--protocol-signature) protsig="$sigdir/$2.png"; shift ;;
+        -c|--chair) chairsig="$sigdir/$2.png"; shift ;;
+        -t|--transcript) transsig="$sigdir/$2.png"; shift ;;
         -s|--show) show=true;;
         -*) echo "Unknown parameter passed: $1"; exit 1 ;;
         *)
@@ -142,6 +146,14 @@ else
     inputfile="stdin"
 fi
 
+# LEGACY HANDLING
+# Remove front matter -- it fucks up the pandoc conversion
+# TODO: find out what is responsible for that / decide if we want to ignore the frontmatter
+echo "Removing front matter..."
+sed -i '/^---$/,/^...$/d' $tmpfile
+
+# if sigline is already in the MD file, don't add anything
+
 # Try to find the name of the protocol
 name=$(grep -E ".?Az\." $tmpfile | sed -E 's/.*Az\.\s*(.*Protokoll).*/\1/')
 if [ -z "$name" ]; then
@@ -158,6 +170,17 @@ fi
 pdf="$name.pdf"
 latex="$name.tex"
 
+# Determine if sigline is already in markdown (for legacy reasons)
+tmpfile_content=$(cat $tmpfile)
+sigline_content=$(cat $sigline)
+
+if [[ $tmpfile_content == *"$sigline_content"* ]]; then
+    echo "Markdown already includes signature lines..."
+else
+    echo "Adding signature lines..."
+    cat $sigline >> $tmpfile
+fi
+
 # If chair signature is set...
 if [ -n "$chairsig" ]; then
     # Check if the chair signature exists
@@ -171,17 +194,17 @@ if [ -n "$chairsig" ]; then
     sed -ri "/^\\\\begin\\{tabular\\}\\{ll\\}$/,/hline/{/^...$/d;/hline/s#^#\\\\includegraphics[width=3cm]{$chairsig}\\\\vspace{-1em}#}" "$tmpfile"
 fi
 
-# If protocolant is set...
-if [ -n "$protsig" ]; then
-    # Check if the protocolant signature exists
-    if [ ! -f $protsig ]; then
-        echo "Protocolant signature not found: $protsig"
+# If trancscript writer is set...
+if [ -n "$transsig" ]; then
+    # Check if the transcript writer signature exists
+    if [ ! -f $transsig ]; then
+        echo "Protocolant signature not found: $transsig"
         exit 1
     fi
     
-    # add the protocolant signature to the proper place
-    echo Adding protocolant signature: $protsig
-    sed -ri "/^Unterschrift der Sitzungsleitung/,/hline/{/^...$/d;/hline/s#^#\\\\includegraphics[width=3cm]{$protsig}\\\\vspace{-1em}#}" "$tmpfile"
+    # add the transcript writer signature to the proper place
+    echo Adding transcript writer signature: $transsig
+    sed -ri "/^Unterschrift der Sitzungsleitung/,/hline/{/^...$/d;/hline/s#^#\\\\includegraphics[width=3cm]{$transsig}\\\\vspace{-1em}#}" "$tmpfile"
 fi
 
 # compile to pdf
@@ -192,7 +215,7 @@ pandoc $tmpfile \
     --template=$scriptpath/tex/template.latex \
     --include-in-header=$scriptpath/tex/style.latex \
     -V logo:$logo \
-    -V header:"$(echo $name | sed -E 's/[_\.]/\ /g' | sed -E 's/-/\./g')" \
+    -V header:"$(echo $name | sed -E 's/[_]/\\_/g')" \
     -V mainfont="$font" \
     -V colorlinks:true \
     -V linkcolor:darkbluk \
@@ -206,7 +229,8 @@ pandoc $tmpfile \
     -o $pdf
 
 # show the pdf if the -s flag is set
-if [ -n "$show" ]; then
+if [ "$show" = true ]; then
+    echo "Opening $pdf..."
     xdg-open $pdf
 fi
 

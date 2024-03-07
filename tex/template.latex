@@ -34,10 +34,10 @@ twoside
 \fancyhf{}
 \fancyheadoffset{0cm}
 $if(logo)$
-\fancyhead[RE,LO]{\raisebox{-0.5\height}{\includegraphics[width=2.5cm]{$logo$}}}
+\fancyhead[R]{\raisebox{-0.5\height}{\includegraphics[width=2.5cm]{$logo$}}}
 $endif$
 $if(header)$
-\fancyhead[C]{$header$}
+\fancyhead[L]{$header$}
 $endif$
 \fancyfoot[C]{Seite \thepage \hspace{1pt} von \pageref{LastPage}}
 
