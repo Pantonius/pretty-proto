@@ -39,7 +39,7 @@ $endif$
 $if(header)$
 \fancyhead[C]{$header$}
 $endif$
-\fancyfoot[LE,RO]{Seite \thepage \hspace{1pt} von \pageref{LastPage}}
+\fancyfoot[C]{Seite \thepage \hspace{1pt} von \pageref{LastPage}}
 
 
 $if(fontfamily)$
@@ -316,7 +316,12 @@ $include-before$
 
 $endfor$
 $if(toc-title)$
-\renewcommand*\contentsname{$toc-title$}
+\renewcommand*\contentsname{%
+    $toc-title$%
+    $if(toc-subtitle)$
+    \newline\textmd{\small{$toc-subtitle$}}%
+    $endif$%
+}
 $endif$
 $if(colorlinks)$
 \hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}

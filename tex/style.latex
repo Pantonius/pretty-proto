@@ -9,3 +9,4 @@
 \usepackage{sectsty}
 \sectionfont{\blukline}
 \subsectionfont{\blukline}
+\subsubsectionfont{\blukline}

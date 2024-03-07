@@ -19,6 +19,14 @@ function usage {
     echo "  -c, --chair-signature     Add the chair signature to the protocol"
     echo "  -p, --protocol-signature  Add the protocolant signature to the protocol"
     echo "  -s, --show                Show the compiled pdf"
+
+    echo "Configuration:"
+    echo "  The script will look for a file called pretty.conf in the current directory"
+    echo "  The file should contain a pretty proto configuration"
+    echo "  The configuration file may contain the following variables:"
+    echo "    sigdir: The directory containing the signatures"
+    echo "    logo: The logo to use for the protocol"
+    echo "    toc-title: The title of the table of contents"
 }
 
 # The input file may be the first argument
@@ -33,6 +41,10 @@ tmpdir=$(mktemp -d)
 chmod 700 $tmpdir
 
 sigdir="$scriptpath/sigs"
+font="Ubuntu"
+logo="$scriptpath/tex/logo.png"
+tocTitle="Tagesordnung"
+tocSubtitle=""
 show=false
 
 ## for sharelatex download
@@ -45,6 +57,12 @@ project="5a058e9d1731df007b5aa1fd"
 filename="protokoll.tex"
 zip="$tmpdir/protocol.zip"
 cookie="$tmpdir/cookies.txt"
+
+# pretty.conf is a file with a pretty proto configuration
+if [ -f pretty.conf ]; then
+    # read the configuration file
+    source pretty.conf
+fi
 
 # Go through all remaining arguments
 while [ "$#" -gt 0 ]; do
@@ -173,14 +191,16 @@ pandoc $tmpfile \
     -f markdown \
     --template=$scriptpath/tex/template.latex \
     --include-in-header=$scriptpath/tex/style.latex \
-    -V logo:$scriptpath/tex/logo.png \
+    -V logo:$logo \
     -V header:"$(echo $name | sed -E 's/[_\.]/\ /g' | sed -E 's/-/\./g')" \
-    -V mainfont="Ubuntu" \
+    -V mainfont="$font" \
     -V colorlinks:true \
     -V linkcolor:darkbluk \
     -V urlcolor:darkbluk \
     -V toccolor:black \
-    -V toc-title:"Tagesordnung" \
+    -V toc-title:"$tocTitle" \
+    -V toc-subtitle:"$tocSubtitle" \
+    -V toc-depth:1 \
     -t pdf \
     --pdf-engine=xelatex \
     -o $pdf
