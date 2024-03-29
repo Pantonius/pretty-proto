@@ -5,8 +5,8 @@ Pretty Proto soll auf möglich einfache Art und Weise ein schönes Protokoll fü
 Im Folgenden werden drei Varianten präsentiert, wie man das Skript benutzen kann. Allgemein stehen einem noch folgende Flaggen zur Verfügung:
 
 `-s, --show` ruft gleich nach der Kompilierung des Protokolls den PDF Viewer des Systems auf, um die Protokolldatei anzuzeigen  
-`-c, --chair-signature` definiert den Namen der Sitzungsleitung, sodass die entsprechende Datei aus dem `sigs` Ordner in das Unterschrifsfeld eingefügt wird  
-`-p, --protocol-signature` definiert den Namen der protokollierenden Person, sodass die entsprechende Datei aus dem `sigs` Ordner in das Unterschriftsfeld eingefügt wird
+`-c, --chair` definiert den Namen der Sitzungsleitung, sodass die entsprechende Datei aus dem `sigs` Ordner in das Unterschrifsfeld eingefügt wird  
+`-t, --transcript` definiert den Namen der protokollierenden Person, sodass die entsprechende Datei aus dem `sigs` Ordner in das Unterschriftsfeld eingefügt wird
 
 Und wie immer auch
 
