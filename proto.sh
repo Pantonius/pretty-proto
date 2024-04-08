@@ -120,8 +120,6 @@ if [ -z "$inputfile" ] && [ -t 0 ]; then
     exit 1
 fi
 
-echo "Input file: $inputfile"
-
 # Create a working copy of the input file
 tmpfile="$tmpdir/$inputfile"
 if [ -n "$inputfile" ]; then

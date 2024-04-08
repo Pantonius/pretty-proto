@@ -12,6 +12,13 @@ Und wie immer auch
 
 `-h, --help`, um eine Kurzhilfe anzuzeigen
 
+Insgesamt lassen sich Optionen, die kein Argument nehmen auch zusammenfassen:
+```sh
+pretty-proto -dks
+# ist das selbe wie
+pretty-proto -d -k -s
+```
+
 ### Sharelatex Downloader
 Wie auch bei der vorherigen Version des Protokoll Skripts, lässt sich das Protokoll direkt von Sharelatex herunterladen und kompilieren:
 
