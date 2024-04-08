@@ -2,39 +2,27 @@
 
 scriptpath=$(dirname $(realpath $0))
 scriptname=$0
-function usage {
-    echo "Usage: $scriptname [OPTIONS] [FILES]"
-    echo "Compile a protocol from a markdown file"
-    echo "If no input file is set, the script will take input from stdin"
-    echo
-    echo "Options:"
-    echo "  -h, --help                Show this help message and exit"
-    echo "  -d, --download            Download the protocol from sharelatex"
-    echo "  -k, --keep                Keep the downloaded markdown protocol"
-    echo "  -e, --email               The email to use for downloading the protocol"
-    echo "  -p, --password            The password to use for downloading the protocol"
-    echo "  -D, --domain              The domain of the sharelatex server"
-    echo "  -P, --project             The project id of the protocol on sharelatex"
-    echo "  -f, --filename            The filename of the protocol on sharelatex"
-    echo "  -c, --chair               Add the signature of the chair to the protocol"
-    echo "  -t, --transcript          Add the signature of the transcript writer to the protocol"
-    echo "  -s, --show                Show the compiled pdf"
 
-    echo "Configuration:"
-    echo "  The script will look for a file called pretty.conf in the current directory"
-    echo "  The file should contain a pretty proto configuration"
-    echo "  The configuration file may contain the following variables:"
-    echo "    sigdir: The directory containing the signatures"
-    echo "    logo: The logo to use for the protocol"
-    echo "    toc-title: The title of the table of contents"
-}
+# OPTS_SPEC is a string that describes the command-line options for the script, based on the requirements of git rev-parse --parseopt.
+OPTS_SPEC="\
+${scriptname} [<options>] [--] [<inputfile>]
 
-# The input file may be the first argument
-if [ -f $1 ]; then
-    inputfile=$1
-    shift
-fi
+Pretty Proto - Compile a protocol from a markdown file
 
+inputfile   The markdown file to compile (if the download flag isn't set). If not provided, input is taken from stdin instead.
+--
+h,help        show this help
+
+d,download    download the protocol from sharelatex
+k,keep        keep the downloaded markdown protocol
+e,email=      the email to use for downloading the protocol
+p,password=   the password to use for downloading the protocol
+D,domain=     the domain of the sharelatex server
+P,project=    the project id of the protocol on sharelatex
+f,filename=   the filename of the protocol on sharelatex
+c,chair=      add the signature of the chair to the
+t,transcript= add the signature of the transcript writer to the protocol
+s,show        show the compiled pdf"
 
 # Create tmpdir
 tmpdir=$(mktemp -d)
@@ -51,9 +39,11 @@ show=false                              # Show the compiled pdf
 intro=""                                # The introduction to the protocol
 outro=""                                # The outro to the protocol
 
-## for sharelatex download
+## DOWNLOAD
 download=false
 keep=false
+
+## for sharelatex download
 domain="https://sharelatex.physik.uni-konstanz.de"
 email="fachschaft.informatik@uni-konstanz.de"
 password=""
@@ -68,34 +58,37 @@ if [ -f pretty.conf ]; then
     source pretty.conf
 fi
 
-# Go through all remaining arguments
-while [ "$#" -gt 0 ]; do
-    case $1 in
-        -h|--help) usage; exit 0 ;;
-        -d|--download) download=true;;
-        -k|--keep) keep=true;;
-        -e|--email) email=$2; shift ;;
-        -p|--password) password=$2; shift ;;
-        -D|--domain) domain=$2; shift ;;
-        -P|--project) project=$2; shift ;;
-        -f|--filename) filename=$2; shift ;;
-        -c|--chair) chairsig="$sigdir/$2.png"; shift ;;
-        -t|--transcript) transsig="$sigdir/$2.png"; shift ;;
-        -s|--show) show=true;;
-        -*) echo "Unknown parameter passed: $1"; exit 1 ;;
-        *)
-            # if inputfile is not set yet and the argument is a file, set inputfile to the argument
-            if [ -z "$inputfile" ] && [ -f $1 ]; then
-                inputfile=$1
-            else
-                echo "Unknown parameter passed: $1"
-                echo
-                usage
-                exit 1
-            fi
-    esac
-    shift
-done
+set_args=
+
+# Function to parse the arguments via git rev-parse --parseopt
+# Based on https://www.lucas-viana.com/posts/bash-argparse/#a-fully-functional-copypaste-example
+parse_args() {
+    set_args="$(echo "$OPTS_SPEC" | git rev-parse --parseopt -- "$@" || echo exit $?)"
+
+    eval "$set_args"
+    
+    while (( $# > 2 )); do
+        opt=$1
+        shift
+        case "$opt" in
+            -d|--download) download=true ;;
+            -k|--keep) keep=true ;;
+            -e|--email) email=$1; shift ;;
+            -p|--password) password=$1; shift ;;
+            -D|--domain) domain=$1; shift ;;
+            -P|--project) project=$1; shift ;;
+            -f|--filename) filename=$1; shift ;;
+            -c|--chair) chairsig="$sigdir/$1.png"; shift ;;
+            -t|--transcript) transsig="$sigdir/$1.png"; shift ;;
+            -s|--show) show=true ;;
+        esac
+    done
+
+    inputfile=$2 # FIXME: no idea why it's $2 and not $1, but it works
+}
+
+# Parse the arguments
+parse_args "$@"
 
 # If the download flag is set, download the protocol
 if [ "$download" = true ]; then
@@ -121,11 +114,13 @@ if [ "$download" = true ]; then
     inputfile=$tmpdir/$filename
 fi
 
-# If no input file is set and stdin is empty
+# If inputfile is not set and no stdin is provided, show usage
 if [ -z "$inputfile" ] && [ -t 0 ]; then
-    echo "No input set"
+    echo "No input file provided and no stdin provided."
     exit 1
 fi
+
+echo "Input file: $inputfile"
 
 # Create a working copy of the input file
 tmpfile="$tmpdir/$inputfile"
@@ -151,8 +146,6 @@ fi
 # TODO: find out what is responsible for that / decide if we want to ignore the frontmatter
 echo "Removing front matter..."
 sed -i '/^---$/,/^...$/d' $tmpfile
-
-# if sigline is already in the MD file, don't add anything
 
 # Try to find the name of the protocol
 name=$(grep -E ".?Az\." $tmpfile | sed -E 's/.*Az\.\s*(.*Protokoll).*/\1/')
