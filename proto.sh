@@ -13,13 +13,15 @@ inputfile   The markdown file to compile (if the download flag isn't set). If no
 --
 h,help        show this help
 
-d,download    download the protocol from sharelatex
+S,sharelatex  download the protocol from sharelatex
+H,hedgedoc    download the protocol from hedgedoc
 k,keep        keep the downloaded markdown protocol
-e,email=      the email to use for downloading the protocol
-p,password=   the password to use for downloading the protocol
+e,email=      the email to use for downloading the protocol from sharelatex
+p,password=   the password to use for downloading the protocol from sharelatex
 D,domain=     the domain of the sharelatex server
 P,project=    the project id of the protocol on sharelatex
 f,filename=   the filename of the protocol on sharelatex
+I,id=         the id of the protocol on hedgedoc
 c,chair=      add the signature of the chair to the
 t,transcript= add the signature of the transcript writer to the protocol
 s,show        show the compiled pdf"
@@ -42,9 +44,11 @@ outro=""                                # The outro to the protocol
 ## DOWNLOAD
 download=false
 keep=false
+domain=
 
 ## for sharelatex download
-domain="https://sharelatex.physik.uni-konstanz.de"
+sharelatex=false
+sl_domain="https://sharelatex.physik.uni-konstanz.de"
 email="fachschaft.informatik@uni-konstanz.de"
 password=""
 project="5a058e9d1731df007b5aa1fd"
@@ -52,13 +56,17 @@ filename="protokoll.tex"
 zip="$tmpdir/protocol.zip"
 cookie="$tmpdir/cookies.txt"
 
+## for hedgedoc download
+hedgedoc=false
+hd_domain="https://md.cityofdogs.dev"
+id=
+
 # pretty.conf is a file with a pretty proto configuration
 if [ -f pretty.conf ]; then
     # read the configuration file
     source pretty.conf
 fi
 
-set_args=
 
 # Function to parse the arguments via git rev-parse --parseopt
 # Based on https://www.lucas-viana.com/posts/bash-argparse/#a-fully-functional-copypaste-example
@@ -71,13 +79,15 @@ parse_args() {
         opt=$1
         shift
         case "$opt" in
-            -d|--download) download=true ;;
+            -S|--sharelatex) download=true; sharelatex=true ;;
+            -H|--hedgedoc) download=true; hedgedoc=true ;;
             -k|--keep) keep=true ;;
             -e|--email) email=$1; shift ;;
             -p|--password) password=$1; shift ;;
             -D|--domain) domain=$1; shift ;;
             -P|--project) project=$1; shift ;;
             -f|--filename) filename=$1; shift ;;
+            -I|--id) id=$1; shift ;;
             -c|--chair) chairsig="$sigdir/$1.png"; shift ;;
             -t|--transcript) transsig="$sigdir/$1.png"; shift ;;
             -s|--show) show=true ;;
@@ -90,8 +100,13 @@ parse_args() {
 # Parse the arguments
 parse_args "$@"
 
-# If the download flag is set, download the protocol
-if [ "$download" = true ]; then
+# If the download and sharelatex flags are set, download the protocol from sharelatex
+if [ "$download" = true ] && [ "$sharelatex" = true ]; then
+    # set the domain if not set
+    if [ -z "$domain" ]; then
+        domain=$sl_domain
+    fi
+
     # Fetching csrf token from login page and saving it to csrf variable
     echo "Fetching login page..."
     curl -s -c $cookie "$domain/login" |
@@ -112,6 +127,20 @@ if [ "$download" = true ]; then
     unzip -q "$zip" "$filename" -d "$tmpdir"
 
     inputfile=$tmpdir/$filename
+fi
+
+# If the download and hedgedoc flags are set, download the protocol from hedgedoc
+if [ "$download" = true ] && [ "$hedgedoc" = true ]; then
+    # set the domain if not set
+    if [ -z "$domain" ]; then
+        domain=$hd_domain
+    fi
+
+    # Download the protocol from hedgedoc
+    echo -e "\nDownloading protocol..."
+    curl -s -o $tmpdir/protocol.md $domain/$id/download
+
+    inputfile=$tmpdir/protocol.md
 fi
 
 # If inputfile is not set and no stdin is provided, show usage
