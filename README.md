@@ -5,6 +5,11 @@ lang: de
 # Pretty Proto
 Pretty Proto soll auf möglich einfache Art und Weise ein schönes Protokoll für die Fachschaftssitzungen der Fachschaft Informatik generieren. Es basiert stark auf dem [Sharelatex Downloader](https://gitlab.inf.uni-konstanz.de/dominik.fidas/sharelatex-downloader), der bisher benutzt wurde.
 
+## Prerequisites
+- [Pandoc](https://pandoc.org/), um Markdown in eine PDF zu konvertieren
+- [XeLaTeX](https://www.overleaf.com/learn/latex/XeLaTeX), um das PDF zu kompilieren
+- [Ubuntu Font](https://design.ubuntu.com/font/), weil Anton sich dafür als Standardfont entschieden hat
+
 ## Usage
 Im Folgenden werden drei Varianten präsentiert, wie man das Skript benutzen kann. Allgemein stehen einem noch folgende Flaggen zur Verfügung:
 
