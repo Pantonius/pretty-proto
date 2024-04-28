@@ -3,6 +3,31 @@
 scriptpath=$(dirname $(realpath $0))
 scriptname=$0
 
+# ensure dependencies are installed
+## pandoc
+if ! command -v pandoc &> /dev/null; then
+    echo "pandoc could not be found. Please install pandoc."
+    exit 1
+fi
+
+## xelatex
+if ! command -v xelatex &> /dev/null; then
+    echo "xelatex could not be found. Please install xelatex."
+    exit 1
+fi
+
+## git
+if ! command -v git &> /dev/null; then
+    echo "git could not be found. Please install git."
+    exit 1
+fi
+
+## Ubuntu Font
+if ! fc-list | grep -q "Ubuntu"; then
+    echo "Ubuntu font could not be found. Please install the Ubuntu font."
+    exit 1
+fi
+
 # OPTS_SPEC is a string that describes the command-line options for the script, based on the requirements of git rev-parse --parseopt.
 OPTS_SPEC="\
 ${scriptname} [<options>] [--] [<inputfile>]
@@ -97,6 +122,23 @@ parse_args() {
     inputfile=$2 # FIXME: no idea why it's $2 and not $1, but it works
 }
 
+parse_frontmatter() {
+    # extract key value pairs
+    while read -r line; do
+        key=$(echo $line | cut -d: -f1 | tr -d '[:space:]')
+        value=$(echo $line | cut -d: -f2- | tr -d '[:space:]')
+        case $key in
+            title) name=$value ;;
+            font) font=$value ;;
+            logo) logo=$value ;;
+            tocTitle) tocTitle=$value ;;
+            tocSubtitle) tocSubtitle=$value ;;
+            intro) intro=$value ;;
+            outro) outro=$value ;;
+        esac
+    done <<< $(echo "$1" | sed -n '2,$p')
+}
+
 # Parse the arguments
 parse_args "$@"
 
@@ -136,9 +178,11 @@ if [ "$download" = true ] && [ "$hedgedoc" = true ]; then
         domain=$hd_domain
     fi
 
+    url="$domain/$id/download"
+
     # Download the protocol from hedgedoc
-    echo -e "\nDownloading protocol..."
-    curl -s -o $tmpdir/protocol.md $domain/$id/download
+    echo -e "\nDownloading protocol from $url..."
+    curl -s -o $tmpdir/protocol.md $url
 
     inputfile=$tmpdir/protocol.md
 fi
@@ -168,16 +212,24 @@ else
     inputfile="stdin"
 fi
 
-# LEGACY HANDLING
-# Remove front matter -- it fucks up the pandoc conversion
-# TODO: find out what is responsible for that / decide if we want to ignore the frontmatter
-echo "Removing front matter..."
-sed -i '/^---$/,/^...$/d' $tmpfile
+# Parse frontmatter
+frontmatter=$(sed -n '/^---$/,/^---$/p' $tmpfile)
+if [ -n "$frontmatter" ]; then
+    # parse
+    parse_frontmatter "$frontmatter"
 
-# Try to find the name of the protocol
-name=$(grep -E ".?Az\." $tmpfile | sed -E 's/.*Az\.\s*(.*Protokoll).*/\1/')
+    # remove frontmatter from the file
+    sed -i '/^---$/,/^---$/d' $tmpfile
+fi
+
+# If the name is not set (by the frontmatter), try to find it in the text
 if [ -z "$name" ]; then
-    name=${inputfile%.*}
+    # Try to find the name of the protocol
+    name=$(grep -E ".?Az\." $tmpfile | sed -E 's/.*Az\.\s*(.*Protokoll).*/\1/')
+    if [ -z "$name" ]; then
+        echo "Could not figure out the name of the protocol."
+        name="protocol"
+    fi
 fi
 
 # If the download and keep flags are set, keep the markdown file
@@ -196,8 +248,10 @@ sigline_content=$(cat $sigline)
 
 if [[ $tmpfile_content == *"$sigline_content"* ]]; then
     echo "Markdown already includes signature lines..."
+elif [ -z "$sigline" ]; then # if no sigline tex is specified, assume that none is wanted
+    echo "No signature line specified..."
 else
-    echo "Adding signature lines..."
+    echo "Adding signature line..."
     cat $sigline >> $tmpfile
 fi
 
@@ -207,11 +261,11 @@ if [ -n "$chairsig" ]; then
     if [ ! -f $chairsig ]; then
         echo "Chair signature not found: $chairsig"
         exit 1
+    else
+        # add the chair signature to the proper place
+        echo Adding chair signature: $chairsig
+        sed -ri "/^\\\\begin\\{tabular\\}\\{ll\\}$/,/hline/{/^...$/d;/hline/s#^#\\\\includegraphics[width=3cm]{$chairsig}\\\\vspace{-1em}#}" "$tmpfile"
     fi
-    
-    # add the chair signature to the proper place
-    echo Adding chair signature: $chairsig
-    sed -ri "/^\\\\begin\\{tabular\\}\\{ll\\}$/,/hline/{/^...$/d;/hline/s#^#\\\\includegraphics[width=3cm]{$chairsig}\\\\vspace{-1em}#}" "$tmpfile"
 fi
 
 # If trancscript writer is set...
@@ -220,11 +274,11 @@ if [ -n "$transsig" ]; then
     if [ ! -f $transsig ]; then
         echo "Protocolant signature not found: $transsig"
         exit 1
+    else
+        # add the transcript writer signature to the proper place
+        echo Adding transcript writer signature: $transsig
+        sed -ri "/^Unterschrift der Sitzungsleitung/,/hline/{/^...$/d;/hline/s#^#\\\\includegraphics[width=3cm]{$transsig}\\\\vspace{-1em}#}" "$tmpfile"
     fi
-    
-    # add the transcript writer signature to the proper place
-    echo Adding transcript writer signature: $transsig
-    sed -ri "/^Unterschrift der Sitzungsleitung/,/hline/{/^...$/d;/hline/s#^#\\\\includegraphics[width=3cm]{$transsig}\\\\vspace{-1em}#}" "$tmpfile"
 fi
 
 # compile to pdf
