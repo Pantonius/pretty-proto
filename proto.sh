@@ -89,6 +89,7 @@ id=
 # pretty.conf is a file with a pretty proto configuration
 if [ -f pretty.conf ]; then
     # read the configuration file
+    echo "Reading configuration file pretty.conf..."
     source pretty.conf
 fi
 
@@ -215,6 +216,8 @@ fi
 # Parse frontmatter
 frontmatter=$(sed -n '/^---$/,/^---$/p' $tmpfile)
 if [ -n "$frontmatter" ]; then
+    echo "Parsing frontmatter..."
+
     # parse
     parse_frontmatter "$frontmatter"
 
@@ -244,7 +247,12 @@ latex="$name.tex"
 
 # Determine if sigline is already in markdown (for legacy reasons)
 tmpfile_content=$(cat $tmpfile)
-sigline_content=$(cat $sigline)
+sigline_content=""
+
+if [ -f "$sigline" ]; then
+    sigline_content=$(cat $sigline)
+fi
+
 
 if [[ $tmpfile_content == *"$sigline_content"* ]]; then
     echo "Markdown already includes signature lines..."
@@ -284,11 +292,11 @@ fi
 # compile to pdf
 echo Compiling to $pdf
 
-pandoc $tmpfile \
+pandoc "$tmpfile" \
     -f markdown \
-    --template=$scriptpath/tex/template.latex \
-    --include-in-header=$scriptpath/tex/style.latex \
-    -V logo:$logo \
+    --template="$scriptpath/tex/template.latex" \
+    --include-in-header="$scriptpath/tex/style.latex" \
+    -V logo:"$logo" \
     -V header:"$(echo $name | sed -E 's/[_]/\\_/g')" \
     -V mainfont="$font" \
     -V colorlinks:true \
@@ -300,12 +308,12 @@ pandoc $tmpfile \
     -V toc-depth:1 \
     -t pdf \
     --pdf-engine=xelatex \
-    -o $pdf
+    -o "$pdf"
 
 # show the pdf if the -s flag is set
 if [ "$show" = true ]; then
     echo "Opening $pdf..."
-    xdg-open $pdf
+    xdg-open "$pdf"
 fi
 
 # cleanup
