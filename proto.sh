@@ -249,6 +249,26 @@ latex="$name.tex"
 tmpfile_content=$(cat $tmpfile)
 sigline_content=""
 
+# replace \pegel with the water level of the Bodensee
+if [[ $tmpfile_content == *\\pegel* ]]; then
+    # api to get the water level
+    api_url="https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/KONSTANZ/W/"
+    # if the name of the protocol was set without date, use the current water level
+    if [[ "$name" == protocol ]]; then
+        pegel="[$(curl -s "${api_url}currentmeasurement.json" | jq -r '.value')cm](https://www.bodenseee.net/pegel/)"
+    else
+        # get the date from the name
+        prefix="SFS_Informatik."
+        suffix=".Protokoll"
+        date="$(echo "$name" | sed -e "s/^$prefix//" -e "s/$suffix$//")T17:00:00+02:00" 
+        # ge the waterlevel for the date at 17:00
+        pegel="[$(curl -s "${api_url}measurements.json?start=$date" | jq -r '.[0].value')cm](https://www.bodenseee.net/pegel/)"
+    fi
+    # replace \pegel with the current water level in tmpfile
+    echo "${tmpfile_content/\\pegel/$pegel}" > $tmpfile
+fi
+
+
 if [ -f "$sigline" ]; then
     sigline_content=$(cat $sigline)
 fi
