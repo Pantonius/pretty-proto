@@ -260,9 +260,22 @@ if [[ $tmpfile_content == *\\pegel* ]]; then
         # get the date from the name
         prefix="SFS_Informatik."
         suffix=".Protokoll"
-        date="$(echo "$name" | sed -e "s/^$prefix//" -e "s/$suffix$//")T17:00:00+02:00" 
-        # ge the waterlevel for the date at 17:00
-        pegel="[$(curl -s "${api_url}measurements.json?start=$date" | jq -r '.[0].value')cm](https://www.bodenseee.net/pegel/)"
+        date="$(echo "$name" | sed -e "s/^$prefix//" -e "s/$suffix$//")T"
+        # get the closing time of the conference 
+        time=$(grep -E "geschlossen" $tmpfile | grep -o -E "[0-9]{2}:[0-9]{2}")
+        # if time is not set, use 17:00
+        if [ -z "$time" ]; then
+            time="17:00:00+02:00"
+        else
+            #round time to the last 15minutes
+            hours=${time:0:2}
+            minutes=${time:3:2}
+            minutes=$((minutes - minutes % 15))
+            time="$hours:$minutes:00+02:00"
+            echo "Time rounded to: $time"
+        fi
+        # ge the waterlevel for the date and time of the conference
+        pegel="[$(curl -s "${api_url}measurements.json?start=$date$time" | jq -r '.[0].value')cm](https://www.bodenseee.net/pegel/)"
     fi
     # replace \pegel with the current water level in tmpfile
     echo "${tmpfile_content/\\pegel/$pegel}" > $tmpfile
