@@ -272,7 +272,6 @@ if [[ $tmpfile_content == *\\pegel* ]]; then
             minutes=${time:3:2}
             minutes=$((minutes - minutes % 15))
             time="$hours:$minutes:00+02:00"
-            echo "Time rounded to: $time"
         fi
         # ge the waterlevel for the date and time of the conference
         pegel="[$(curl -s "${api_url}measurements.json?start=$date$time" | jq -r '.[0].value')cm](https://www.bodenseee.net/pegel/)"
