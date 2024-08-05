@@ -29,6 +29,7 @@ twoside
 \usepackage{a4wide}
 \usepackage{fancyhdr}
 \usepackage{lastpage}
+\usepackage{soul}
 \pagestyle{fancy}
 \renewcommand{\headrulewidth}{0pt}
 \fancyhf{}
