@@ -22,6 +22,11 @@ if ! command -v git &> /dev/null; then
     exit 1
 fi
 
+## jq
+if ! command -v jq &> /dev/null; then
+    echo "jq could not be found. Please install jq if you want the \pegel command to work"
+fi
+
 ## Ubuntu Font
 if ! fc-list | grep -q "Ubuntu"; then
     echo "Ubuntu font could not be found. Please install the Ubuntu font."
@@ -43,7 +48,7 @@ H,hedgedoc    download the protocol from hedgedoc
 k,keep        keep the downloaded markdown protocol
 e,email=      the email to use for downloading the protocol from sharelatex
 p,password=   the password to use for downloading the protocol from sharelatex
-D,domain=     the domain of the sharelatex server
+D,domain=     the domain of the sharelatex or hedgedoc instance
 P,project=    the project id of the protocol on sharelatex
 f,filename=   the filename of the protocol on sharelatex
 I,id=         the id of the protocol on hedgedoc
@@ -120,7 +125,7 @@ parse_args() {
         esac
     done
 
-    inputfile=$2 # FIXME: no idea why it's $2 and not $1, but it works
+    inputfile="$2"
 }
 
 parse_frontmatter() {
@@ -270,6 +275,7 @@ if [[ $tmpfile_content == *\\pegel* ]]; then
             #round time to the last 15minutes
             hours=${time:0:2}
             minutes=${time:3:2}
+	    minutes=$(sed -r 's/0*([0-9]*)/\1/' <<< $minutes)
             minutes=$((minutes - minutes % 15))
             time="$hours:$minutes:00+02:00"
         fi
@@ -323,6 +329,23 @@ fi
 
 # compile to pdf
 echo Compiling to $pdf
+
+# pandoc "$tmpfile" \
+#     -f markdown \
+#     --template="$scriptpath/tex/template.latex" \
+#     --include-in-header="$scriptpath/tex/style.latex" \
+#     -V logo:"$logo" \
+#     -V header:"$(echo $name | sed -E 's/[_]/\\_/g')" \
+#     -V mainfont="$font" \
+#     -V colorlinks:true \
+#     -V linkcolor:darkbluk \
+#     -V urlcolor:darkbluk \
+#     -V toccolor:black \
+#     -V toc-title:"$tocTitle" \
+#     -V toc-subtitle:"$tocSubtitle" \
+#     -V toc-depth:1 \
+#     -t latex \
+#     -o "test.latex"
 
 pandoc "$tmpfile" \
     -f markdown \
