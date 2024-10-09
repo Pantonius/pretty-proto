@@ -67,3 +67,38 @@ Falls das Protokoll bereits lokal als Markdown-Datei existiert, lässt sich das 
 Aus Spaß habe ich auch die Möglichkeit eingebaut, dass man den Markdown-Code in das Skript reinpipet. Ich weiß nicht welchen Nutzen das haben könnte, aber es ist da:
 
 ```cat protokoll.md | pretty-proto```
+
+### Pretty Config
+Um kontextsensitiv die Standardwerte des Skripts zu ändern, gibt es die Möglichkeit eine `pretty.conf` Datei im selben Verzeichnis wie die Ausführung des Skripts zu erstellen. Diese Datei wird nach dem Start des Skripts über `source` eingelesen und überschreibt somit die Standardwerte von pretty-proto. Im folgenden die (möglicherweise veralteten) Standardwerte:
+```sh
+# Set default values
+sigdir="$scriptpath/sigs"               # The directory containing the signatures
+sigline="$scriptpath/tex/sigline.latex" # The signature line to add to the protocol
+font="Ubuntu"                           # The font to use for the protocol
+logo="$scriptpath/tex/logo.png"         # The logo to use for the protocol
+tocTitle="Tagesordnung"                 # The title of the table of contents
+tocSubtitle=""                          # The subtitle of the table of contents
+show=false                              # Show the compiled pdf
+intro=""                                # The introduction to the protocol
+outro=""                                # The outro to the protocol
+
+## DOWNLOAD
+download=false
+keep=false
+domain=
+
+## for sharelatex download
+sharelatex=false
+sl_domain="https://sharelatex.physik.uni-konstanz.de"
+email="fachschaft.informatik@uni-konstanz.de"
+password=""
+project="5a058e9d1731df007b5aa1fd"
+filename="protokoll.tex"
+zip="$tmpdir/protocol.zip"
+cookie="$tmpdir/cookies.txt"
+
+## for hedgedoc download
+hedgedoc=false
+hd_domain="https://md.cityofdogs.dev"
+id=
+```
