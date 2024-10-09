@@ -95,7 +95,9 @@ id=
 if [ -f pretty.conf ]; then
     # read the configuration file
     echo "Reading configuration file pretty.conf..."
-    source pretty.conf
+
+    # source the configuration file
+    source ./pretty.conf
 fi
 
 
