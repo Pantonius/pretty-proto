@@ -1,7 +1,3 @@
----
-lang: de
----
-
 # Pretty Proto
 Pretty Proto soll auf möglich einfache Art und Weise ein schönes Protokoll für die Fachschaftssitzungen der Fachschaft Informatik generieren. Es basiert stark auf dem [Sharelatex Downloader](https://gitlab.inf.uni-konstanz.de/dominik.fidas/sharelatex-downloader), der bisher benutzt wurde.
 
