@@ -363,6 +363,8 @@ pandoc "$tmpfile" \
     -V toc-title:"$tocTitle" \
     -V toc-subtitle:"$tocSubtitle" \
     -V toc-depth:1 \
+    -V lang:de \
+    -V csquotes:true \
     -t pdf \
     --pdf-engine=xelatex \
     -o "$pdf"
