@@ -349,7 +349,9 @@ echo Compiling to $pdf
 #     -t latex \
 #     -o "test.latex"
 
-pandoc "$tmpfile" \
+sed -E "s/([^#]) TOP ([0-9]):/\1 TOP \\\\phantom{0}\2:/g" "$tmpfile" > "$tmpdir/sed-pad-top-numbers"
+
+pandoc "$tmpdir/sed-pad-top-numbers" \
     -f markdown \
     --template="$scriptpath/tex/template.latex" \
     --include-in-header="$scriptpath/tex/style.latex" \
