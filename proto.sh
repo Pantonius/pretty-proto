@@ -134,7 +134,7 @@ parse_frontmatter() {
     # extract key value pairs
     while read -r line; do
         key=$(echo $line | cut -d: -f1 | tr -d '[:space:]')
-        value=$(echo $line | cut -d: -f2- | tr -d '[:space:]')
+	value=$(echo $line | cut -d: -f2- | sed -r 's/^\s*"?([^"]*)"?$/\1/')
         case $key in
             title) name=$value ;;
             font) font=$value ;;
