@@ -62,7 +62,7 @@ chmod 700 $tmpdir
 
 # Set default values
 sigdir="$scriptpath/sigs"               # The directory containing the signatures
-sigline="$scriptpath/tex/sigline.latex" # The signature line to add to the protocol
+sigline="$scriptpath/tex/sigline.tex" # The signature line to add to the protocol
 font="Ubuntu"                           # The font to use for the protocol
 logo="$scriptpath/tex/logo.png"         # The logo to use for the protocol
 tocTitle="Tagesordnung"                 # The title of the table of contents
@@ -334,8 +334,8 @@ echo Compiling to $pdf
 
 # pandoc "$tmpfile" \
 #     -f markdown \
-#     --template="$scriptpath/tex/template.latex" \
-#     --include-in-header="$scriptpath/tex/style.latex" \
+#     --template="$scriptpath/tex/template.tex" \
+#     --include-in-header="$scriptpath/tex/style.tex" \
 #     -V logo:"$logo" \
 #     -V header:"$(echo $name | sed -E 's/[_]/\\_/g')" \
 #     -V mainfont="$font" \
@@ -347,14 +347,14 @@ echo Compiling to $pdf
 #     -V toc-subtitle:"$tocSubtitle" \
 #     -V toc-depth:1 \
 #     -t latex \
-#     -o "test.latex"
+#     -o "test.tex"
 
 sed -E "s/([^#]) TOP ([0-9]):/\1 TOP \\\\phantom{0}\2:/g" "$tmpfile" > "$tmpdir/sed-pad-top-numbers"
 
 pandoc "$tmpdir/sed-pad-top-numbers" \
     -f markdown \
-    --template="$scriptpath/tex/template.latex" \
-    --include-in-header="$scriptpath/tex/style.latex" \
+    --template="$scriptpath/tex/template.tex" \
+    --include-in-header="$scriptpath/tex/style.tex" \
     -V logo:"$logo" \
     -V header:"$(echo $name | sed -E 's/[_]/\\_/g')" \
     -V mainfont="$font" \
