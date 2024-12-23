@@ -143,6 +143,7 @@ parse_frontmatter() {
             tocSubtitle) tocSubtitle=$value ;;
             intro) intro=$value ;;
             outro) outro=$value ;;
+	    sigline) sigline=$value ;;
         esac
     done <<< $(echo "$1" | sed -n '2,$p')
 }
