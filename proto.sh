@@ -136,7 +136,7 @@ parse_frontmatter() {
         key=$(echo $line | cut -d: -f1 | tr -d '[:space:]')
 	value=$(echo $line | cut -d: -f2- | sed -r 's/^\s*"?([^"]*)"?$/\1/')
         case $key in
-            title) name=$value ;;
+            title) protocolname=$value ;;
             font) font=$value ;;
             logo) logo=$value ;;
             tocTitle) tocTitle=$value ;;
@@ -234,24 +234,24 @@ if [ -n "$frontmatter" ]; then
 fi
 
 # If the name is not set (by the frontmatter), try to find it in the text
-if [ -z "$name" ]; then
+if [ -z "$protocolname" ]; then
     # Try to find the name of the protocol
-    name=$(grep -E ".?Az\." $tmpfile | sed -E 's/.*Az\.\s*(.*Protokoll).*/\1/')
-    if [ -z "$name" ]; then
+    protocolname=$(grep -E ".?Az\." $tmpfile | sed -E 's/.*Az\.\s*(.*Protokoll).*/\1/')
+    if [ -z "$protocolname" ]; then
         echo "Could not figure out the name of the protocol."
-        name="protocol"
+        protocolname="protocol"
     fi
 fi
 
 # If the download and keep flags are set, keep the markdown file
 if [ "$download" = true ] && [ "$keep" = true ]; then
     echo "Keeping the markdown file..."
-    cp $tmpfile $name.md
+    cp $tmpfile $protocolname.md
 fi
 
 # Set the output file names
-pdf="$name.pdf"
-latex="$name.tex"
+pdf="$protocolname.pdf"
+latex="$protocolname.tex"
 
 # Determine if sigline is already in markdown (for legacy reasons)
 tmpfile_content=$(cat $tmpfile)
@@ -262,13 +262,13 @@ if [[ $tmpfile_content == *\\pegel* ]]; then
     # api to get the water level
     api_url="https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/KONSTANZ/W/"
     # if the name of the protocol was set without date, use the current water level
-    if [[ "$name" == protocol ]]; then
+    if [[ "$protocolname" == protocol ]]; then
         pegel="[$(curl -s "${api_url}currentmeasurement.json" | jq -r '.value')cm](https://www.bodenseee.net/pegel/)"
     else
         # get the date from the name
         prefix="SFS_Informatik."
         suffix=".Protokoll"
-        date="$(echo "$name" | sed -e "s/^$prefix//" -e "s/$suffix$//")T"
+        date="$(echo "$protocolname" | sed -e "s/^$prefix//" -e "s/$suffix$//")T"
         # get the closing time of the conference 
         time=$(grep -E "geschlossen" $tmpfile | grep -o -E "[0-9]{2}:[0-9]{2}")
         # if time is not set, use 17:00
@@ -338,7 +338,7 @@ echo Compiling to $pdf
 #     --template="$scriptpath/tex/template.tex" \
 #     --include-in-header="$scriptpath/tex/style.tex" \
 #     -V logo:"$logo" \
-#     -V header:"$(echo $name | sed -E 's/[_]/\\_/g')" \
+#     -V header:"$(echo $protocolname | sed -E 's/[_]/\\_/g')" \
 #     -V mainfont="$font" \
 #     -V colorlinks:true \
 #     -V linkcolor:darkbluk \
@@ -357,7 +357,7 @@ pandoc "$tmpdir/sed-pad-top-numbers" \
     --template="$scriptpath/tex/template.tex" \
     --include-in-header="$scriptpath/tex/style.tex" \
     -V logo:"$logo" \
-    -V header:"$(echo $name | sed -E 's/[_]/\\_/g')" \
+    -V header:"$(echo $protocolname | sed -E 's/[_]/\\_/g')" \
     -V mainfont="$font" \
     -V colorlinks:true \
     -V linkcolor:darkbluk \
