@@ -350,9 +350,21 @@ echo Compiling to $pdf
 #     -t latex \
 #     -o "test.tex"
 
-sed -E "s/([^#]) TOP ([0-9]):/\1 TOP \\\\phantom{0}\2:/g" "$tmpfile" > "$tmpdir/sed-pad-top-numbers"
 
-pandoc "$tmpdir/sed-pad-top-numbers" \
+# Only apply top number padding if at least one TOP number consists of two digits
+compileinput=""
+setpadtopnumbers=""
+
+if [[ $(grep -o -E "([^ #] TOP ([1-9][0-9]))" "$tmpfile") ]]; then
+    compileinput="$tmpdir/sed-pad-top-numbers"
+    setpadtopnumbers="set"
+    sed -E "s/([^#]) TOP ([0-9]):/\1 TOP \\\\phantom{0}\2:/g" "$tmpfile" > $compileinput
+else
+    compileinput="$tmpfile"
+fi
+#############
+
+pandoc "$compileinput" \
     -f markdown \
     --template="$scriptpath/tex/template.tex" \
     --include-in-header="$scriptpath/tex/style.tex" \
@@ -368,6 +380,7 @@ pandoc "$tmpdir/sed-pad-top-numbers" \
     -V toc-depth:1 \
     -V lang:de \
     -V csquotes:true \
+    -V padtopnumbers:$setpadtopnumbers \
     -t pdf \
     --pdf-engine=xelatex \
     -o "$pdf"
