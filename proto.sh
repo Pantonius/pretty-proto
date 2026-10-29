@@ -1,6 +1,6 @@
 #!/bin/bash
 
-scriptpath=$(dirname $(realpath $0))
+scriptpath=$(dirname "$(realpath "$0")")
 scriptname=$0
 
 # ensure dependencies are installed
@@ -58,7 +58,7 @@ s,show        show the compiled pdf"
 
 # Create tmpdir
 tmpdir=$(mktemp -d)
-chmod 700 $tmpdir
+chmod 700 "$tmpdir"
 
 # Set default values
 sigdir="$scriptpath/sigs"               # The directory containing the signatures
@@ -133,8 +133,8 @@ parse_args() {
 parse_frontmatter() {
     # extract key value pairs
     while read -r line; do
-        key=$(echo $line | cut -d: -f1 | tr -d '[:space:]')
-	value=$(echo $line | cut -d: -f2- | sed -r 's/^\s*"?([^"]*)"?$/\1/')
+        key=$(echo "$line" | cut -d: -f1 | tr -d '[:space:]')
+	value=$(echo "$line" | cut -d: -f2- | sed -r 's/^\s*"?([^"]*)"?$/\1/')
         case $key in
             title) protocolname=$value ;;
             font) font=$value ;;
@@ -145,7 +145,7 @@ parse_frontmatter() {
             outro) outro=$value ;;
 	    sigline) sigline=$value ;;
         esac
-    done <<< $(echo "$1" | sed -n '2,$p')
+    done <<< "$(echo "$1" | sed -n '2,$p')"
 }
 
 # Parse the arguments
@@ -160,18 +160,18 @@ if [ "$download" = true ] && [ "$sharelatex" = true ]; then
 
     # Fetching csrf token from login page and saving it to csrf variable
     echo "Fetching login page..."
-    curl -s -c $cookie "$domain/login" |
-        sed -rn 's/^.*<input name="_csrf" type="hidden" value="([^"]+)".*$/\1/p' > $tmpdir/csrf.txt
-    csrf=$(cat $tmpdir/csrf.txt)
+    curl -s -c "$cookie" "$domain/login" |
+        sed -rn 's/^.*<input name="_csrf" type="hidden" value="([^"]+)".*$/\1/p' > "$tmpdir/csrf.txt"
+    csrf=$(cat "$tmpdir/csrf.txt")
 
     # Logging into sharelatex
     echo "Logging into sharelatex..."
-    curl "$domain/login" -s -b $cookie -c $cookie -H "Referer: $domain/login" \
+    curl "$domain/login" -s -b "$cookie" -c "$cookie" -H "Referer: $domain/login" \
         -d "_csrf=$csrf" -d "email=$email" -d "password=$password"
 
     # Download the project zip
     echo -e "\nDownloading protocol..."
-    curl -s -b $cookie -c $cookie -o $zip $domain/project/$project/download/zip
+    curl -s -b "$cookie" -c "$cookie" -o "$zip" "$domain/project/$project/download/zip"
 
     # Unzip the project
     echo -e "\nUnzipping protocol..."
@@ -191,7 +191,7 @@ if [ "$download" = true ] && [ "$hedgedoc" = true ]; then
 
     # Download the protocol from hedgedoc
     echo -e "\nDownloading protocol from $url..."
-    curl -s -o $tmpdir/protocol.md $url
+    curl -s -o "$tmpdir"/protocol.md "$url"
 
     inputfile=$tmpdir/protocol.md
 fi
@@ -211,18 +211,18 @@ if [ -n "$inputfile" ]; then
     else
         # if inputfile is not within the tmpdir, copy it
         echo "Creating working copy of $inputfile..."
-        cp $inputfile $tmpfile
+        cp "$inputfile" "$tmpfile"
     fi
 else
     # take from stdin
     echo "Taking input from stdin..."
     tmpfile="$tmpdir/stdin"
-    cat > $tmpfile
+    cat > "$tmpfile"
     inputfile="stdin"
 fi
 
 # Parse frontmatter
-frontmatter=$(sed -n '/^---$/,/^---$/p' $tmpfile)
+frontmatter=$(sed -n '/^---$/,/^---$/p' "$tmpfile")
 if [ -n "$frontmatter" ]; then
     echo "Parsing frontmatter..."
 
@@ -230,13 +230,13 @@ if [ -n "$frontmatter" ]; then
     parse_frontmatter "$frontmatter"
 
     # remove frontmatter from the file
-    sed -i '/^---$/,/^---$/d' $tmpfile
+    sed -i '/^---$/,/^---$/d' "$tmpfile"
 fi
 
 # If the name is not set (by the frontmatter), try to find it in the text
 if [ -z "$protocolname" ]; then
     # Try to find the name of the protocol
-    protocolname=$(grep -E ".?Az\." $tmpfile | sed -E 's/.*Az\.\s*(.*Protokoll).*/\1/')
+    protocolname=$(grep -E ".?Az\." "$tmpfile" | sed -E 's/.*Az\.\s*(.*Protokoll).*/\1/')
     if [ -z "$protocolname" ]; then
         echo "Could not figure out the name of the protocol."
         protocolname="protocol"
@@ -246,15 +246,15 @@ fi
 # If the download and keep flags are set, keep the markdown file
 if [ "$download" = true ] && [ "$keep" = true ]; then
     echo "Keeping the markdown file..."
-    cp $tmpfile $protocolname.md
+    cp "$tmpfile" "$protocolname.md"
 fi
 
 # Set the output file names
 pdf="$protocolname.pdf"
-latex="$protocolname.tex"
+# latex="$protocolname.tex"
 
 # Determine if sigline is already in markdown (for legacy reasons)
-tmpfile_content=$(cat $tmpfile)
+tmpfile_content=$(cat "$tmpfile")
 sigline_content=""
 
 # replace \pegel with the water level of the Bodensee
@@ -270,7 +270,7 @@ if [[ $tmpfile_content == *\\pegel* ]]; then
         suffix=".Protokoll"
         date="$(echo "$protocolname" | sed -e "s/^$prefix//" -e "s/$suffix$//")T"
         # get the closing time of the conference 
-        time=$(grep -E "geschlossen" $tmpfile | grep -o -E "[0-9]{2}:[0-9]{2}")
+        time=$(grep -E "geschlossen" "$tmpfile" | grep -o -E "[0-9]{2}:[0-9]{2}")
         # if time is not set, use 17:00
         if [ -z "$time" ]; then
             time="17:00:00+02:00"
@@ -278,7 +278,7 @@ if [[ $tmpfile_content == *\\pegel* ]]; then
             #round time to the last 15minutes
             hours=${time:0:2}
             minutes=${time:3:2}
-	    minutes=$(sed -r 's/0*([0-9]*)/\1/' <<< $minutes)
+	    minutes=$(sed -r 's/0*([0-9]*)/\1/' <<< "$minutes")
             minutes=$((minutes - minutes % 15))
             time="$hours:$minutes:00+02:00"
         fi
@@ -286,12 +286,12 @@ if [[ $tmpfile_content == *\\pegel* ]]; then
         pegel="[$(curl -s "${api_url}measurements.json?start=$date$time" | jq -r '.[0].value')cm](https://www.bodenseee.net/pegel/)"
     fi
     # replace \pegel with the current water level in tmpfile
-    echo "${tmpfile_content/\\pegel/$pegel}" > $tmpfile
+    echo "${tmpfile_content/\\pegel/$pegel}" > "$tmpfile"
 fi
 
 
 if [ -f "$sigline" ]; then
-    sigline_content=$(cat $sigline)
+    sigline_content=$(cat "$sigline")
 fi
 
 
@@ -301,18 +301,18 @@ elif [ -z "$sigline" ]; then # if no sigline tex is specified, assume that none 
     echo "No signature line specified..."
 else
     echo "Adding signature line..."
-    cat $sigline >> $tmpfile
+    cat "$sigline" >> "$tmpfile"
 fi
 
 # If chair signature is set...
 if [ -n "$chairsig" ]; then
     # Check if the chair signature exists
-    if [ ! -f $chairsig ]; then
+    if [ ! -f "$chairsig" ]; then
         echo "Chair signature not found: $chairsig"
         exit 1
     else
         # add the chair signature to the proper place
-        echo Adding chair signature: $chairsig
+        echo Adding chair signature: "$chairsig"
         sed -ri "/^\\\\begin\\{tabular\\}\\{ll\\}$/,/hline/{/^...$/d;/hline/s#^#\\\\includegraphics[width=3cm]{$chairsig}\\\\vspace{-1em}#}" "$tmpfile"
     fi
 fi
@@ -320,18 +320,18 @@ fi
 # If trancscript writer is set...
 if [ -n "$transsig" ]; then
     # Check if the transcript writer signature exists
-    if [ ! -f $transsig ]; then
+    if [ ! -f "$transsig" ]; then
         echo "Protocolant signature not found: $transsig"
         exit 1
     else
         # add the transcript writer signature to the proper place
-        echo Adding transcript writer signature: $transsig
+        echo Adding transcript writer signature: "$transsig"
         sed -ri "/^Unterschrift der Sitzungsleitung/,/hline/{/^...$/d;/hline/s#^#\\\\includegraphics[width=3cm]{$transsig}\\\\vspace{-1em}#}" "$tmpfile"
     fi
 fi
 
 # compile to pdf
-echo Compiling to $pdf
+echo Compiling to "$pdf"
 
 # pandoc "$tmpfile" \
 #     -f markdown \
@@ -365,11 +365,11 @@ fi
 #############
 
 pandoc "$compileinput" \
-    -f markdown \
+    -f markdown+mark \
     --template="$scriptpath/tex/template.tex" \
     --include-in-header="$scriptpath/tex/style.tex" \
     -V logo:"$logo" \
-    -V header:"$(echo $protocolname | sed -E 's/[_]/\\_/g')" \
+    -V header:"$(echo "$protocolname" | sed -E 's/[_]/\\_/g')" \
     -V mainfont="$font" \
     -V colorlinks:true \
     -V linkcolor:darkbluk \
@@ -392,4 +392,4 @@ if [ "$show" = true ]; then
 fi
 
 # cleanup
-rm -r $tmpdir
+rm -r "$tmpdir"
